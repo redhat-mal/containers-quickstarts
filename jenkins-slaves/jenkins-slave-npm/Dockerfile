@@ -1,23 +1,29 @@
 #invoke npm in jenkinsfile: sh "scl enable rh-nodejs6 'npm run build'"
-FROM openshift/jenkins-slave-base-centos7:v3.11
+FROM quay.io/openshift/origin-jenkins-agent-base:4.3
 
-ENV NODEJS_VERSION=10 \
+ENV NODEJS_VERSION=12 \
     NPM_CONFIG_PREFIX=$HOME/.npm-global \
-    PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH \
-    CHROME_BIN=/bin/google-chrome
+    PATH=$HOME/node_modules/.bin/:$HOME/.npm-global/bin/:$PATH 
 
-RUN curl --silent https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm --output google-chrome-stable_current_x86_64.rpm && \
-    curl --silent --location https://rpm.nodesource.com/setup_${NODEJS_VERSION}.x | bash -
+ADD ubi.repo /etc/yum.repos.d/ubi.repo
 
-RUN INSTALL_PKGS="nodejs redhat-lsb libXScrnSaver xdg-utils liberation-fonts" && \
-    yum install -y --setopt=tsflags=nodocs \
-      $INSTALL_PKGS && \
-    yum -y localinstall \
-      google-chrome-stable_current_x86_64.rpm && \
-    rm google-chrome-stable_current_x86_64.rpm && \
-    rpm -V $INSTALL_PKGS google-chrome-stable && \
-    yum clean all -y && \
-    rm -rf /var/cache/yum && \
+#RUN curl --silent https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm --output google-chrome-stable_current_x86_64.rpm && \
+RUN curl --silent --location https://rpm.nodesource.com/setup_${NODEJS_VERSION}.x | bash -
+
+RUN INSTALL_PKGS="nodejs " && \
+    DISABLE_REPOS=--disablerepo='rhel-*' && \
+    yum $DISABLE_REPOS install -y yum-utils && \
+    yum -y --setopt=tsflags=nodocs $DISABLE_REPOS install $INSTALL_PKGS && \
+    rpm -V $INSTALL_PKGS && \
+    yum -y clean all --enablerepo='*' && \
+#    yum install -y --setopt=tsflags=nodocs \
+#      $INSTALL_PKGS && \
+#    yum -y localinstall \
+#      google-chrome-stable_current_x86_64.rpm && \
+#    rm google-chrome-stable_current_x86_64.rpm && \
+#    rpm -V $INSTALL_PKGS google-chrome-stable && \
+#    yum clean all -y && \
+#    rm -rf /var/cache/yum && \
     npm install --unsafe-perm -g npm-audit-html npm-audit-ci-wrapper sonar-scanner || cat /home/jenkins/.npm/_logs/*-debug.log && \
     chown root:root /home/jenkins -R && \
     chmod 775 /home/jenkins/.config -R && \
