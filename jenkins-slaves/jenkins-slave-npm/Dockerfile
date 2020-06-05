@@ -9,8 +9,9 @@ ADD ubi.repo /etc/yum.repos.d/ubi.repo
 
 #RUN curl --silent https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm --output google-chrome-stable_current_x86_64.rpm && \
 RUN curl --silent --location https://rpm.nodesource.com/setup_${NODEJS_VERSION}.x | bash -
+RUN curl --silent --location https://dl.yarnpkg.com/rpm/yarn.repo | tee /etc/yum.repos.d/yarn.repo
 
-RUN INSTALL_PKGS="nodejs " && \
+RUN INSTALL_PKGS="nodejs yarn " && \
     DISABLE_REPOS=--disablerepo='rhel-*' && \
     yum $DISABLE_REPOS install -y yum-utils && \
     yum -y --setopt=tsflags=nodocs $DISABLE_REPOS install $INSTALL_PKGS && \
